@@ -37,7 +37,8 @@ protected:
 	int screen_width;
 	int screen_height;
 	MESH *dog;
-	//GLuint programObject, phong_dir, phong_point, checkerboard, wood;
+	TargaImage *dog_tex;
+	GLuint dog_texId;
 	GLuint dog_program;
 
 	int xform_mode;

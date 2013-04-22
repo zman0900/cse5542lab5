@@ -1,8 +1,10 @@
 #version 130
 varying vec4 fragment_position;
 varying vec3 fragment_normal;
+varying vec2 fragment_texcoord;
 
 uniform sampler2D env_texture;
+uniform sampler2D tex_c;
 
 
 vec4 Environment(vec3 dir)
@@ -64,7 +66,8 @@ void main()
 	float f = Fresnel(V, N, 1.5);
 	vec4 c = f*cr + (1.0-f)*ct;*/
 
-	vec4 c = vec4(1.0, 1.0, 1.0, 1.0);
+	//vec4 c = vec4(1.0, 1.0, 1.0, 1.0);
+	vec4 c = texture(tex_c, fragment_texcoord);
 
     gl_FragColor = vec4(brightness * vec3(c), 1.0);
     //gl_FragColor = vec4(f, f, f, 1.0);

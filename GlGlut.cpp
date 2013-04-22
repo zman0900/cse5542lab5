@@ -166,32 +166,76 @@ void GlGlut::start(int *argc, char *argv[]) {
 	}
 #endif
 
+	Check_GPU_Status();
+
 	// Turn on depth testing
 	glEnable(GL_DEPTH_TEST);
 
 	// Turn on culling
-	//glFrontFace(GL_CW);
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_FRONT);
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
 
 	// Meshes
+	printf("Loading dog mesh...\n");
 	dog = new MESH();
 	//dog->Read_OBJ_File_Advanced("vase_02.obj");
 	dog->Read_OBJ_File_Advanced("doberman.obj");
 	//dog->Read_OBJ_File("bunny.obj");
 	dog->Scale(.25);
 	dog->Centerize();
-	cout << "Verts:" << dog->number << " Tri:" << dog->t_number << endl;
+	cout << "\tVerts:" << dog->number << " Tri:" << dog->t_number << endl;
 
 	// Shaders
-	Check_GPU_Status();
 	printf("Loading dog shader...\n");
 	dog_program = Setup_GLSL("dog");
 	glUseProgram(dog_program);
 		dog->vpos = glGetAttribLocation(dog_program, "vpos");
 		dog->vnorm = glGetAttribLocation(dog_program, "vnorm");
 		dog->vtex = glGetAttribLocation(dog_program, "vtex");
+		dog->tex_c = glGetUniformLocation(dog_program, "tex_c");
 	glUseProgram(0);
+
+	// Textures
+	printf("Loading dog textures...\n");
+	dog_tex = new TargaImage();
+	if (!dog_tex->load("doberman_c.tga"))
+		cerr << "Failed to load texture!" << endl;
+	glGenTextures(1, &dog_texId);
+	glUniform1i(dog->tex_c, 0);
+    glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, dog_texId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	                GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+	int bpp = dog_tex->getBitsPerPixel();
+	GLenum format = 0;
+	GLenum internal_format = 0;
+	switch (bpp) {
+		case 8:
+			format = GL_LUMINANCE;
+			internal_format = GL_INTENSITY;
+			break;
+		case 24:
+			format = GL_RGB;
+			internal_format = GL_RGB8;
+			break;
+		case 32:
+			format = GL_RGBA;
+			internal_format = GL_RGBA;
+			break;
+		default:
+			cerr << "Unknown testure format!" << endl;
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, dog_tex->getWidth(),
+	             dog_tex->getHeight(), 0, format, GL_UNSIGNED_BYTE,
+	             dog_tex->getImageData());
+	glGenerateMipmap(GL_TEXTURE_2D);
+	delete dog_tex;
 
 	// Initialize VBOs and VAO
 	dog->Init();

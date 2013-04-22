@@ -378,6 +378,10 @@ void MESH::Init()
 	glVertexAttribPointer(vnorm, 3, GL_FLOAT, GL_FALSE, sizeof(VERTEX),
 	                      reinterpret_cast<void*>(offsetof(VERTEX, n)));
 
+	glEnableVertexAttribArray(vtex);
+	glVertexAttribPointer(vtex, 2, GL_FLOAT, GL_FALSE, sizeof(VERTEX),
+	                      reinterpret_cast<void*>(offsetof(VERTEX, uv)));
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, triangle_handle);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*t_number*3, T,
 	             GL_STATIC_DRAW);
