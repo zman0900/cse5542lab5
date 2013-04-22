@@ -37,8 +37,7 @@ protected:
 	int screen_width;
 	int screen_height;
 	MESH *dog;
-	TargaImage *dog_tex;
-	GLuint dog_texId;
+	GLuint dog_texCId, dog_texNId, dog_texSId;
 	GLuint dog_program;
 
 	int xform_mode;

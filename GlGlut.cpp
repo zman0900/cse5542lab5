@@ -4,6 +4,48 @@ using namespace std;
 
 namespace lab5 {
 
+void loadTexture(const string& filename, GLuint *texId, GLenum texNum,
+                 GLint location) {
+	TargaImage *tex = new TargaImage();
+	if (!tex->load(filename))
+		cerr << "Failed to load texture!" << endl;
+	glGenTextures(1, texId);
+	glUniform1i(location, texNum);
+	glActiveTexture(texNum);
+	glBindTexture(GL_TEXTURE_2D, *texId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	                GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+	int bpp = tex->getBitsPerPixel();
+	GLenum format = 0;
+	GLenum internal_format = 0;
+	switch (bpp) {
+		case 8:
+			format = GL_LUMINANCE;
+			internal_format = GL_INTENSITY;
+			break;
+		case 24:
+			format = GL_RGB;
+			internal_format = GL_RGB8;
+			break;
+		case 32:
+			format = GL_RGBA;
+			internal_format = GL_RGBA;
+			break;
+		default:
+			cerr << "Unknown testure format!" << endl;
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tex->getWidth(),
+	             tex->getHeight(), 0, format, GL_UNSIGNED_BYTE,
+	             tex->getImageData());
+	glGenerateMipmap(GL_TEXTURE_2D);
+	delete tex;
+}
+
 GlGlut *GlGlut::instance = NULL;
 
 //// Glut callbacks /////
@@ -44,7 +86,10 @@ void GlGlut::keyboard(unsigned char key, int mousex, int mousey) {
 		case 27: // Esc
 			exit(EXIT_SUCCESS);
 			break;
-		
+		case 'r':
+			cout << "Reloading shaders" << endl;
+			dog_program = Setup_GLSL("dog");
+			break;
 		default:
 			//cout << "unused key: " << (int) key << endl;
 			return;
@@ -194,48 +239,15 @@ void GlGlut::start(int *argc, char *argv[]) {
 		dog->vnorm = glGetAttribLocation(dog_program, "vnorm");
 		dog->vtex = glGetAttribLocation(dog_program, "vtex");
 		dog->tex_c = glGetUniformLocation(dog_program, "tex_c");
+		dog->tex_n = glGetUniformLocation(dog_program, "tex_n");
+		dog->tex_s = glGetUniformLocation(dog_program, "tex_s");
 	glUseProgram(0);
 
 	// Textures
 	printf("Loading dog textures...\n");
-	dog_tex = new TargaImage();
-	if (!dog_tex->load("doberman_c.tga"))
-		cerr << "Failed to load texture!" << endl;
-	glGenTextures(1, &dog_texId);
-	glUniform1i(dog->tex_c, 0);
-    glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, dog_texId);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-	                GL_LINEAR_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
-	int bpp = dog_tex->getBitsPerPixel();
-	GLenum format = 0;
-	GLenum internal_format = 0;
-	switch (bpp) {
-		case 8:
-			format = GL_LUMINANCE;
-			internal_format = GL_INTENSITY;
-			break;
-		case 24:
-			format = GL_RGB;
-			internal_format = GL_RGB8;
-			break;
-		case 32:
-			format = GL_RGBA;
-			internal_format = GL_RGBA;
-			break;
-		default:
-			cerr << "Unknown testure format!" << endl;
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, dog_tex->getWidth(),
-	             dog_tex->getHeight(), 0, format, GL_UNSIGNED_BYTE,
-	             dog_tex->getImageData());
-	glGenerateMipmap(GL_TEXTURE_2D);
-	delete dog_tex;
+	loadTexture("doberman_c.tga", &dog_texCId, GL_TEXTURE0, dog->tex_c);
+	loadTexture("doberman_n.tga", &dog_texNId, GL_TEXTURE1, dog->tex_n);
+	loadTexture("doberman_s.tga", &dog_texSId, GL_TEXTURE2, dog->tex_s);
 
 	// Initialize VBOs and VAO
 	dog->Init();

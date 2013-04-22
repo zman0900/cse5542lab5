@@ -79,7 +79,7 @@ public:
     GLuint triangle_handle;
     GLuint vao;
     GLuint vpos, vnorm, vtex;
-    GLuint tex_c;
+    GLuint tex_c, tex_n, tex_s;
 
 	MESH();
 
