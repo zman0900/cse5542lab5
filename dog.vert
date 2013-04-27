@@ -10,7 +10,7 @@ varying vec2 fragment_texcoord;
 void main()
 { 
 	fragment_position = (gl_ModelViewMatrix * vpos); //In the eye space
-	fragment_normal   = gl_NormalMatrix * vnorm;   //In the eye space
+	fragment_normal   = normalize(gl_NormalMatrix * vnorm);   //In the eye space
 	fragment_texcoord = vtex;
 	gl_Position = gl_ModelViewProjectionMatrix * vpos;   //In the clip space
 }

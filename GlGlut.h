@@ -60,6 +60,10 @@ protected:
 	static void mouseClickWrapper(int button, int state, int x, int y);
 	static void mouseMotionWrapper(int x, int y);
 	static void reshapeWrapper(int w, int h);
+
+	// Others
+	void loadTexture(const string& filename, GLuint *texId);
+    void loadShaders();
 public:
 	GlGlut();
 	~GlGlut();

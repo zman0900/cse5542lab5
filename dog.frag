@@ -3,22 +3,31 @@ varying vec4 fragment_position;
 varying vec3 fragment_normal;
 varying vec2 fragment_texcoord;
 
-uniform sampler2D env_texture;
-uniform sampler2D tex_c, tex_n, tex_s;
+//uniform sampler2D env_texture;
+uniform sampler2D tex_c;
+uniform sampler2D tex_s;
 
+uniform vec4 ambient = vec4(0.5, 0.5, 0.5, 1.0);
+uniform vec4 diffuse = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec4 specular = vec4(1.0, 1.0, 1.0, 1.0);
+uniform float shininess = 50.0;
+
+uniform vec3 lightDir = vec3(1.0, -1.0, 1.0);
+uniform vec4 lightPos = vec4(1.0, -1.0, 1.0, 1.0);
 
 void main()
-{   
-    //Calculate illumination in the eye space
-    vec3 light_source=vec3(0, 0, 0);
-    vec3 V = -vec3(fragment_position);
-	vec3 L = light_source - vec3(fragment_position);
-	L = normalize(L);
-	vec3 N = normalize(fragment_normal);
-    float brightness=max(abs(dot(L,N)), 0.0);
+{	
+	vec4 diffuseMap = texture(tex_c, fragment_texcoord);
+	vec4 specularMap = texture(tex_s, fragment_texcoord);
 
-	vec4 c = texture(tex_c, fragment_texcoord);
-	vec4 s = texture(tex_s, fragment_texcoord);
+	vec4 norm = vec4(fragment_normal, 0.0);
 
-    gl_FragColor = brightness * c + s;
+	vec4 s_eye = normalize(vec4(lightPos - fragment_position));
+	vec4 v_eye = normalize(-fragment_position);
+	vec4 r_eye = reflect(-s_eye, norm);
+	vec4 Ia = vec4(0.1, 0.1, 0.1, 1.0) * ambient;
+	vec4 Id = diffuse * diffuseMap * max(dot(s_eye, norm), 0.0);
+	vec4 Is = specular * specularMap * pow(max(dot(r_eye, v_eye), 0.0), shininess);
+
+	gl_FragColor = (Ia + Id + Is);
 } 

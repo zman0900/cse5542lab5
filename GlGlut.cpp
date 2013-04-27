@@ -4,14 +4,13 @@ using namespace std;
 
 namespace lab5 {
 
-void loadTexture(const string& filename, GLuint *texId, GLenum texNum,
-                 GLint location) {
+GlGlut *GlGlut::instance = NULL;
+
+void GlGlut::loadTexture(const string& filename, GLuint *texId) {
 	TargaImage *tex = new TargaImage();
 	if (!tex->load(filename))
 		cerr << "Failed to load texture!" << endl;
 	glGenTextures(1, texId);
-	glUniform1i(location, texNum);
-	glActiveTexture(texNum);
 	glBindTexture(GL_TEXTURE_2D, *texId);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -46,11 +45,21 @@ void loadTexture(const string& filename, GLuint *texId, GLenum texNum,
 	delete tex;
 }
 
-GlGlut *GlGlut::instance = NULL;
+void GlGlut::loadShaders() {
+	printf("Loading dog shader...\n");
+	dog_program = Setup_GLSL("dog");
+	glUseProgram(dog_program);
+		dog->vpos = glGetAttribLocation(dog_program, "vpos");
+		dog->vnorm = glGetAttribLocation(dog_program, "vnorm");
+		dog->vtex = glGetAttribLocation(dog_program, "vtex");
+		dog->tex_c = glGetUniformLocation(dog_program, "tex_c");
+		dog->tex_s = glGetUniformLocation(dog_program, "tex_s");
+	glUseProgram(0);
+}
 
 //// Glut callbacks /////
 void GlGlut::display() {
-	glClearColor(0, 0, 0, 1);
+	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
@@ -67,6 +76,14 @@ void GlGlut::display() {
 
 	// Draw dog using vertex array object
 	glUseProgram(dog_program);
+
+	glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, dog_texCId);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, dog_texSId);
+
 	glBindVertexArray(dog->vao);
 		glDrawElements(GL_TRIANGLES, dog->t_number*3, GL_UNSIGNED_INT,
 		               (char*) NULL+0);
@@ -88,7 +105,7 @@ void GlGlut::keyboard(unsigned char key, int mousex, int mousey) {
 			break;
 		case 'r':
 			cout << "Reloading shaders" << endl;
-			dog_program = Setup_GLSL("dog");
+			loadShaders();
 			break;
 		default:
 			//cout << "unused key: " << (int) key << endl;
@@ -232,22 +249,14 @@ void GlGlut::start(int *argc, char *argv[]) {
 	cout << "\tVerts:" << dog->number << " Tri:" << dog->t_number << endl;
 
 	// Shaders
-	printf("Loading dog shader...\n");
-	dog_program = Setup_GLSL("dog");
-	glUseProgram(dog_program);
-		dog->vpos = glGetAttribLocation(dog_program, "vpos");
-		dog->vnorm = glGetAttribLocation(dog_program, "vnorm");
-		dog->vtex = glGetAttribLocation(dog_program, "vtex");
-		dog->tex_c = glGetUniformLocation(dog_program, "tex_c");
-		dog->tex_n = glGetUniformLocation(dog_program, "tex_n");
-		dog->tex_s = glGetUniformLocation(dog_program, "tex_s");
-	glUseProgram(0);
+	loadShaders();
 
 	// Textures
 	printf("Loading dog textures...\n");
-	loadTexture("doberman_c.tga", &dog_texCId, GL_TEXTURE0, dog->tex_c);
-	loadTexture("doberman_n.tga", &dog_texNId, GL_TEXTURE1, dog->tex_n);
-	loadTexture("doberman_s.tga", &dog_texSId, GL_TEXTURE2, dog->tex_s);
+	loadTexture("doberman_c.tga", &dog_texCId);
+	glUniform1i(dog->tex_c, 0);
+	loadTexture("doberman_s.tga", &dog_texSId);
+	glUniform1i(dog->tex_s, 1);
 
 	// Initialize VBOs and VAO
 	dog->Init();
