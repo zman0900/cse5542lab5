@@ -22,6 +22,8 @@
 
 #define DEF_SCREEN_W 800
 #define DEF_SCREEN_H 800
+#define MIRROR_TEX_W 1024
+#define MIRROR_TEX_H 1024
 #define WINDOW_TITLE "CSE 5542 Lab 5 - Dan Ziemba"
 #define XFORM_NONE 0
 #define XFORM_ROTATE 1
@@ -40,6 +42,9 @@ protected:
 	MESH *dog;
 	GLuint dog_texCId, dog_texNId, dog_texSId;
 	GLuint dog_program;
+
+	GLuint fboId, rboId;
+	GLuint mirrorTexId;
 
 	int xform_mode;
 	int press_x, press_y;
@@ -64,7 +69,8 @@ protected:
 
 	// Others
 	void loadTexture(const string& filename, GLuint *texId);
-    void loadShaders();
+	void loadShaders();
+	void setViewport();
 public:
 	GlGlut();
 	~GlGlut();

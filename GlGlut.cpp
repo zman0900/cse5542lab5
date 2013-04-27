@@ -57,11 +57,48 @@ void GlGlut::loadShaders() {
 	glUseProgram(0);
 }
 
+void GlGlut::setViewport() {
+	if (screen_width > screen_height) {
+		glViewport((screen_width-screen_height)/2, 0, screen_height,
+		           screen_height);
+	} else {
+		glViewport(0, (screen_height-screen_width)/2, screen_width,
+		           screen_width);
+	}
+}
+
 //// Glut callbacks /////
 void GlGlut::display() {
+	// adjust viewport and projection matrix to texture dimension
+	glViewport(0, 0, MIRROR_TEX_W, MIRROR_TEX_H);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0f, (float)(MIRROR_TEX_W)/MIRROR_TEX_H, 1.0f, 100.0f);
+	glMatrixMode(GL_MODELVIEW);
+
+	// Switch to mirror FBO
+	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+
+	// Clear FBO
+	glClearColor(1, 1, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Draw mirrored objects here
+
+	// Back to main framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Bind mirror texture and generate mipmaps
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, mirrorTexId);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	// Clear main framebuffer
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
+	// Back to normal viewport
+	setViewport();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, 1, .1, 100);
@@ -78,7 +115,6 @@ void GlGlut::display() {
 	glUseProgram(dog_program);
 
 	glActiveTexture(GL_TEXTURE0);
-	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, dog_texCId);
 
 	glActiveTexture(GL_TEXTURE1);
@@ -160,11 +196,7 @@ void GlGlut::reshape(int w, int h) {
 	screen_width = w;
 	screen_height = h;
 
-	if (w > h) {
-		glViewport((w-h)/2, 0, h, h);
-	} else {
-		glViewport(0, (h-w)/2, w, w);
-	}
+	setViewport();
 
 	glutPostRedisplay();
 }
@@ -234,7 +266,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 	GLenum err = glewInit();
 	if (GLEW_OK != err) {
 		cerr << "Fatal Error: " << glewGetErrorString(err) << endl;
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 
@@ -278,6 +310,40 @@ void GlGlut::start(int *argc, char *argv[]) {
 
 	// Initialize VBOs and VAO
 	dog->Init();
+
+	// Texture for mirror
+	glGenTextures(1, &mirrorTexId);
+	glBindTexture(GL_TEXTURE_2D, mirrorTexId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	                GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, MIRROR_TEX_W, MIRROR_TEX_H, 0,
+	             GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// FBO for mirror
+	glGenFramebuffers(1, &fboId);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+	// Need render buffer for depth so depth test will work in FBO
+	glGenRenderbuffers(1, &rboId);
+	glBindRenderbuffer(GL_RENDERBUFFER, rboId);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, MIRROR_TEX_W,
+	                      MIRROR_TEX_H);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	// attach a texture to FBO color attachement point
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+	                       mirrorTexId, 0);
+	// attach a renderbuffer to depth attachment point
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	                          GL_RENDERBUFFER, rboId);
+	// Check status
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		cerr << "Framebuffer setup failed!" << endl;
+		exit(EXIT_FAILURE);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Start
 	reshape(screen_width, screen_height);
