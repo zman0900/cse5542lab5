@@ -46,7 +46,7 @@ void GlGlut::loadTexture(const string& filename, GLuint *texId) {
 }
 
 void GlGlut::loadShaders() {
-	printf("Loading dog shader...\n");
+	cout << "Loading dog shader..." << endl;
 	dog_program = Setup_GLSL("dog");
 	glUseProgram(dog_program);
 		dog->vpos = glGetAttribLocation(dog_program, "vpos");
@@ -54,6 +54,14 @@ void GlGlut::loadShaders() {
 		dog->vtex = glGetAttribLocation(dog_program, "vtex");
 		dog->tex_c = glGetUniformLocation(dog_program, "tex_c");
 		dog->tex_s = glGetUniformLocation(dog_program, "tex_s");
+	glUseProgram(0);
+	cout << "Loading mirror shader..." << endl;
+	mirror_program = Setup_GLSL("mirror");
+	glUseProgram(mirror_program);
+		mirror->vpos = glGetAttribLocation(mirror_program, "vpos");
+		mirror->vnorm = glGetAttribLocation(mirror_program, "vnorm");
+		mirror->vtex = glGetAttribLocation(mirror_program, "vtex");
+		mirror->tex = glGetUniformLocation(mirror_program, "tex");
 	glUseProgram(0);
 }
 
@@ -80,7 +88,7 @@ void GlGlut::display() {
 	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
 
 	// Clear FBO
-	glClearColor(1, 1, 1, 1);
+	glClearColor(1, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Draw mirrored objects here
@@ -111,19 +119,23 @@ void GlGlut::display() {
 	glRotated(y_angle, 1.0, 0.0, 0.0);
 	glScaled(scale_size, scale_size, scale_size);
 
+	// Draw mirror
+	glUseProgram(mirror_program);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, mirrorTexId);
+		glUniform1i(mirror->tex, 2);
+		mirror->draw();
+	glUseProgram(0);
+
 	// Draw dog using vertex array object
 	glUseProgram(dog_program);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, dog_texCId);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, dog_texSId);
-
-	glBindVertexArray(dog->vao);
-		glDrawElements(GL_TRIANGLES, dog->t_number*3, GL_UNSIGNED_INT,
-		               (char*) NULL+0);
-	glBindVertexArray(0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, dog_texCId);
+		glUniform1i(dog->tex_c, 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, dog_texSId);
+		glUniform1i(dog->tex_s, 1);
+		dog->Draw();
 	glUseProgram(0);
 
 	glutSwapBuffers();
@@ -284,9 +296,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glEnable(GL_DEPTH_TEST);
 
 	// Turn on culling
-	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
 
 	// Meshes
 	printf("Loading dog mesh...\n");
@@ -297,6 +307,8 @@ void GlGlut::start(int *argc, char *argv[]) {
 	dog->Scale(.25);
 	dog->Centerize();
 	cout << "\tVerts:" << dog->number << " Tri:" << dog->t_number << endl;
+	mirror = new Mirror();
+	
 
 	// Shaders
 	loadShaders();
@@ -307,9 +319,6 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glUniform1i(dog->tex_c, 0);
 	loadTexture("doberman_s.tga", &dog_texSId);
 	glUniform1i(dog->tex_s, 1);
-
-	// Initialize VBOs and VAO
-	dog->Init();
 
 	// Texture for mirror
 	glGenTextures(1, &mirrorTexId);
@@ -322,6 +331,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, MIRROR_TEX_W, MIRROR_TEX_H, 0,
 	             GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glUniform1i(mirror->tex, 2);
 
 	// FBO for mirror
 	glGenFramebuffers(1, &fboId);
@@ -344,6 +354,10 @@ void GlGlut::start(int *argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Initialize VBOs and VAO
+	dog->Init();
+	mirror->initVBO();
 
 	// Start
 	reshape(screen_width, screen_height);

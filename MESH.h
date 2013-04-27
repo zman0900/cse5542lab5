@@ -94,6 +94,8 @@ public:
 	void Centerize();
 	
 	void Init();
+
+	void Draw();
 };
 
 }

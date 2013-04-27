@@ -12,7 +12,6 @@ uniform vec4 diffuse = vec4(1.0, 1.0, 1.0, 1.0);
 uniform vec4 specular = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float shininess = 50.0;
 
-uniform vec3 lightDir = vec3(1.0, -1.0, 1.0);
 uniform vec4 lightPos = vec4(1.0, -1.0, 1.0, 1.0);
 
 void main()

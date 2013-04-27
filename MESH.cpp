@@ -389,4 +389,11 @@ void MESH::Init()
 	glBindVertexArray(0);
 }
 
+void MESH::Draw() {
+	glBindVertexArray(vao);
+		glDrawElements(GL_TRIANGLES, t_number*3, GL_UNSIGNED_INT,
+		               (char*) NULL+0);
+	glBindVertexArray(0);
+}
+
 }

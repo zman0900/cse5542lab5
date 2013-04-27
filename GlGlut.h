@@ -19,6 +19,7 @@
 #include "MY_GLSL.h"
 #include "MESH.h"
 #include "targa.h"
+#include "mirror.h"
 
 #define DEF_SCREEN_W 800
 #define DEF_SCREEN_H 800
@@ -41,10 +42,11 @@ protected:
 	bool multisample;
 	MESH *dog;
 	GLuint dog_texCId, dog_texNId, dog_texSId;
-	GLuint dog_program;
+	GLuint dog_program, mirror_program;
 
 	GLuint fboId, rboId;
 	GLuint mirrorTexId;
+	Mirror *mirror;
 
 	int xform_mode;
 	int press_x, press_y;
