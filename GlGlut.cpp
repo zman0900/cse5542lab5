@@ -16,7 +16,7 @@ void GlGlut::loadTexture(const string& filename, GLuint *texId) {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-	                GL_LINEAR_MIPMAP_NEAREST);
+	                GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
 	int bpp = tex->getBitsPerPixel();
@@ -106,6 +106,16 @@ void GlGlut::keyboard(unsigned char key, int mousex, int mousey) {
 		case 'r':
 			cout << "Reloading shaders" << endl;
 			loadShaders();
+			break;
+		case 'm':
+			if (multisample) {
+				glDisable(GL_MULTISAMPLE);
+				cout << "Multisample off" << endl;
+			} else {
+				glEnable(GL_MULTISAMPLE);
+				cout << "Multisample on" << endl;
+			}
+			multisample = !multisample;
 			break;
 		default:
 			//cout << "unused key: " << (int) key << endl;
@@ -208,7 +218,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 
 	// Init glut
 	glutInit(argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH|GLUT_MULTISAMPLE);
 	glutInitWindowSize(screen_width, screen_height);
 	glutCreateWindow(WINDOW_TITLE);
 
@@ -229,6 +239,14 @@ void GlGlut::start(int *argc, char *argv[]) {
 #endif
 
 	Check_GPU_Status();
+
+	// Print multisample info
+	multisample = true;
+	GLint buf, sbuf;
+	glGetIntegerv(GL_SAMPLE_BUFFERS, &buf);
+	printf("number of sample buffers is %d\n", buf);
+	glGetIntegerv(GL_SAMPLES, &sbuf);
+	printf("number of samples is %d\n", sbuf);
 
 	// Turn on depth testing
 	glEnable(GL_DEPTH_TEST);

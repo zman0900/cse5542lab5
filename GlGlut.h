@@ -36,6 +36,7 @@ protected:
 	static GlGlut *instance;
 	int screen_width;
 	int screen_height;
+	bool multisample;
 	MESH *dog;
 	GLuint dog_texCId, dog_texNId, dog_texSId;
 	GLuint dog_program;
