@@ -285,6 +285,17 @@ void GlGlut::keyboard(unsigned char key, int mousex, int mousey) {
 		case 'o':
 			dogAngle = (dogAngle + 5) % 360;
 			break;
+		case 'f':
+			if (fullscreen) {
+				//screen_width = DEF_SCREEN_W;
+				//screen_height = DEF_SCREEN_H;
+				fullscreen = false;
+				glutReshapeWindow(DEF_SCREEN_W, DEF_SCREEN_H);
+			} else {
+				glutFullScreen();
+				fullscreen = true;
+			}
+			break;
 		default:
 			//cout << "unused key: " << (int) key << endl;
 			return;
@@ -358,6 +369,7 @@ GlGlut::GlGlut() {
 	mirrorAngle = -15;
 	dogAngle = -45;
 	dogX = dogZ = 0.0;
+	fullscreen = false;
 }
 
 GlGlut::~GlGlut() {

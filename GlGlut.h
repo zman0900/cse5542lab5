@@ -42,7 +42,7 @@ protected:
 	static GlGlut *instance;
 	int screen_width;
 	int screen_height;
-	bool multisample;
+	bool multisample, fullscreen;
 	MESH *dog, *env;
 	GLuint dog_texCId, dog_texSId;
 	GLuint dog_program, mirror_program, env_program;

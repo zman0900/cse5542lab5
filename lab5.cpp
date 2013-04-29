@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
 	cout << "\t'.' - Rotate mirror right" << endl;
 	cout << "\t'm' - Toggle multisample" << endl;
 	cout << "\t'r' - Reload shaders" << endl;
+	cout << "\t'f' - Toggle fullscreen" << endl;
 	cout << endl;
 
 	GlGlut g;
