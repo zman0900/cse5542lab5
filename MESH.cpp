@@ -27,6 +27,7 @@
 // MESH.h
 //**************************************************************************************
 #include "MESH.h"
+#include <cstddef>
 
 namespace lab5 {
 
@@ -135,14 +136,14 @@ void MESH::Read_OBJ_File(const char *filename)
 	float* TN=new float[max_number*3];
 
 	memset(TN, 0, sizeof(float)*number*3);
-	for(int i=0; i<t_number; i++)
+	for(unsigned int i=0; i<t_number; i++)
 	{
 		float *p0=X[T[i*3+0]].p;
 		float *p1=X[T[i*3+1]].p;
 		float *p2=X[T[i*3+2]].p;
 
 		float e0[3], e1[3];
-		for(int i=0; i<3; i++)
+		for(unsigned int i=0; i<3; i++)
 		{
 			e0[i]=p1[i]-p0[i];
 			e1[i]=p2[i]-p0[i];
@@ -151,10 +152,10 @@ void MESH::Read_OBJ_File(const char *filename)
 		Normalize(&TN[i*3]);
 	}
 
-	for(int i=0; i<number; i++)
+	for(unsigned int i=0; i<number; i++)
 		X[i].n[0]=X[i].n[1]=X[i].n[2]=0;
 
-	for(int i=0; i<t_number; i++)
+	for(unsigned int i=0; i<t_number; i++)
 	{
 		int v0=T[i*3+0];
 		int v1=T[i*3+1];
@@ -169,7 +170,7 @@ void MESH::Read_OBJ_File(const char *filename)
 		X[v2].n[1]+=TN[i*3+1];
 		X[v2].n[2]+=TN[i*3+2];
 	}
-	for(int i=0; i<number; i++)	Normalize(X[i].n);
+	for(unsigned int i=0; i<number; i++)	Normalize(X[i].n);
 
 	delete[] TN;
 }
@@ -259,8 +260,7 @@ void MESH::Read_OBJ_File_Advanced(const char *filename)
 	}
 	fclose(fp);
 
-
-	for(int t=0; t<t_number; t++)
+	for(unsigned int t=0; t<t_number; t++)
 	{
 		// WRONG! these are uv
 		//T[t*3+0]=t_list[t*9+1];
@@ -312,8 +312,10 @@ void MESH::Read_OBJ_File_Advanced(const char *filename)
 
 	// WRONG!
 	//number=t_number*3;
-	for (int i = 0; i <= t_number*3+2; ++i) {
-		if (T[i] > number) number = T[i];
+	for (unsigned int i = 0; i < t_number*3; ++i) {
+		if (T[i] > number) {
+			number = T[i];
+		}
 	}
 	++number;
 
@@ -325,7 +327,7 @@ void MESH::Read_OBJ_File_Advanced(const char *filename)
 
 void MESH::Scale(float s)
 {
-	for(int i=0; i<number; i++)
+	for(unsigned int i=0; i<number; i++)
 	{
 		X[i].p[0]*=s;
 		X[i].p[1]*=s;
@@ -339,7 +341,7 @@ void MESH::Centerize()
 	//Make sure that the bunny is centered at the origin.
 	float center[3];
 	center[0]=center[1]=center[2]=0;
-	for(int i=0; i<number; i++)
+	for(unsigned int i=0; i<number; i++)
 	{
 		center[0]+=X[i].p[0];
 		center[1]+=X[i].p[1];
@@ -348,7 +350,7 @@ void MESH::Centerize()
 	center[0]/=number;
 	center[1]/=number;
 	center[2]/=number;
-	for(int i=0; i<number; i++)
+	for(unsigned int i=0; i<number; i++)
 	{
 		X[i].p[0]-=center[0];
 		X[i].p[1]-=center[1];
@@ -360,8 +362,8 @@ void MESH::Create_Sphere(float radius, int m, int n)
 {
 	delete[] X;
 	delete[] T;
-	X = new VERTEX [m*n+m+n];
-	T = new GLuint [(m*n+m+n)*6];
+	X = new VERTEX [(n+1)*(m+1)];
+	T = new GLuint [(n+1)*(m+1)*6];
 
     number=0;
     for(int i=0; i<=m; i++)
@@ -396,8 +398,8 @@ void MESH::Build_Normal()
 {
 	float* TN=new float[t_number*3];
 
-	memset(TN, 0, sizeof(float)*number*3);
-	for(int i=0; i<t_number; i++)
+	memset(TN, 0, sizeof(float)*t_number*3);
+	for(unsigned int i=0; i<t_number; i++)
 	{
 		float *p0=X[T[i*3+0]].p;
 		float *p1=X[T[i*3+1]].p;
@@ -413,10 +415,10 @@ void MESH::Build_Normal()
 		Normalize(&TN[i*3]);
 	}
 
-	for(int i=0; i<number; i++)
+	for(unsigned int i=0; i<number; i++)
 		X[i].n[0]=X[i].n[1]=X[i].n[2]=0;
 
-	for(int i=0; i<t_number; i++)
+	for(unsigned int i=0; i<t_number; i++)
 	{
 		int v0=T[i*3+0];
 		int v1=T[i*3+1];
@@ -431,7 +433,7 @@ void MESH::Build_Normal()
 		X[v2].n[1]+=TN[i*3+1];
 		X[v2].n[2]+=TN[i*3+2];
 	}
-	for(int i=0; i<number; i++)	Normalize(X[i].n);
+	for(unsigned int i=0; i<number; i++)	Normalize(X[i].n);
 
 	delete[] TN;
 }

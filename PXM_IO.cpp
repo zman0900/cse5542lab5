@@ -28,9 +28,12 @@
 //**************************************************************************************
 #ifndef __FILE_IO_PXM_IO_H__
 #define __FILE_IO_PXM_IO_H__
+
 #include "PXM_IO.h"
 #include <cstdio>
 #include <cstring>
+
+namespace lab5 {
 
 bool PXM_Read(const char *filename, unsigned char **data, int &width, int &height)
 {
@@ -189,6 +192,8 @@ bool PXM_Write(const char *filename, unsigned char *data, int width, int height)
 	fclose(fp);
 	printf("Write %s successfully\n", filename);
 	return fp!=NULL;
+}
+
 }
 
 #endif //__FILE_IO_PXM_IO_H__

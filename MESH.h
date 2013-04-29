@@ -62,18 +62,18 @@ typedef struct
 class MESH
 {
 public:
-	int			max_number;
+	int max_number;
 	int max_verts;
 	int max_tris;
 
 	//vertex data
-	int			number;		//vertex number
-	VERTEX*		X;
+	unsigned int number; //vertex number
+	VERTEX* X;
 
 
 	//triangle data
-	int			t_number;	//triangle number
-	GLuint*	T;			//triangle indices
+	unsigned int t_number; //triangle number
+	GLuint*	T; //triangle indices
 
     GLuint vertex_handle;
     GLuint triangle_handle;

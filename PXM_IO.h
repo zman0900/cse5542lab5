@@ -29,10 +29,14 @@
 #ifndef __FILE_IO_PXM_IO_H__
 #define __FILE_IO_PXM_IO_H__
 
+namespace lab5 {
+
 bool PXM_Read(const char *filename, unsigned char **data, int &width, int &height);
 
 bool PXM_Read(const char *filename, float **data, int &width, int &height);
 
 bool PXM_Write(const char *filename, unsigned char *data, int width, int height);
+
+}
 
 #endif //__FILE_IO_PXM_IO_H__

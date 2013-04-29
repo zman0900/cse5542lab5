@@ -13,6 +13,8 @@ using std::vector;
 using std::string;
 using std::istream;
 
+namespace lab5 {
+
 // These masks are AND'd with the imageDesc in the TGA header,
 // bit 4 is left-to-right ordering
 // bit 5 is top-to-bottom
@@ -80,5 +82,7 @@ private:
 
     void flipImageVertically();
 };
+
+}
 
 #endif 

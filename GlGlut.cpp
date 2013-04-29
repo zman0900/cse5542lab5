@@ -7,14 +7,15 @@ namespace lab5 {
 GlGlut *GlGlut::instance = NULL;
 
 void GlGlut::createCheckerboardTexture() {
-  for (int irow = 0; irow < CHECK_HEIGHT; irow++)
-    for (int jcol = 0; jcol < CHECK_WIDTH; jcol++) {
-      int bit = (irow & 4) ^ (jcol & 4);
-      GLubyte c = 0;
-      if (bit) { c = 255; };
-      checkerTexture[irow][jcol][0] = c;
-      checkerTexture[irow][jcol][1] = c;
-      checkerTexture[irow][jcol][2] = c;
+	checkerTexture = new GLubyte[CHECK_HEIGHT*CHECK_WIDTH*3];
+	for (int irow = 0; irow < CHECK_HEIGHT; irow++)
+		for (int jcol = 0; jcol < CHECK_WIDTH; jcol++) {
+			int bit = (irow & 4) ^ (jcol & 4);
+			GLubyte c = 0;
+			if (bit) { c = 255; };
+			checkerTexture[irow*CHECK_WIDTH*3+jcol*3+0] = c;
+			checkerTexture[irow*CHECK_WIDTH*3+jcol*3+1] = c;
+			checkerTexture[irow*CHECK_WIDTH*3+jcol*3+2] = c;
     }
 }
 
@@ -354,6 +355,7 @@ void GlGlut::reshapeWrapper(int w, int h) {
 /////////////////////////
 
 GlGlut::GlGlut() {
+	setInstance();
 	screen_width = DEF_SCREEN_W;
 	screen_height = DEF_SCREEN_H;
 	xform_mode = XFORM_NONE;
@@ -373,8 +375,6 @@ void GlGlut::setInstance() {
 }
 
 void GlGlut::start(int *argc, char *argv[]) {
-	setInstance();
-
 	// Init glut
 	glutInit(argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH|GLUT_MULTISAMPLE);
@@ -450,6 +450,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUniform1i(floor->tex, 3);
+	delete[] checkerTexture;
 
 	// Texture for mirror
 	glGenTextures(1, &mirrorTexId);

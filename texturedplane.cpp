@@ -1,4 +1,5 @@
 #include "texturedplane.h"
+#include <cstddef>
 
 namespace lab5 {
 

@@ -3,6 +3,7 @@
 #include "GlGlut.h"
 
 using namespace std;
+using namespace lab5;
 
 int main(int argc, char *argv[]) {
 	cout << "CSE 5542 - Lab 5" << endl;
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]) {
 	cout << "\t'r' - Reload shaders" << endl;
 	cout << endl;
 
-	lab5::GlGlut g;
+	GlGlut g;
 	g.start(&argc, argv);
 
 	return 0;

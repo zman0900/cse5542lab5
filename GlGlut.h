@@ -44,13 +44,13 @@ protected:
 	int screen_height;
 	bool multisample;
 	MESH *dog, *env;
-	GLuint dog_texCId, dog_texNId, dog_texSId;
+	GLuint dog_texCId, dog_texSId;
 	GLuint dog_program, mirror_program, env_program;
 
 	GLuint fboId, rboId;
 	GLuint mirrorTexId, checkTexId, envTexId;
 	TexturedPlane *mirror, *floor;
-	GLubyte checkerTexture[CHECK_HEIGHT][CHECK_WIDTH][3];
+	GLubyte *checkerTexture;
 
 	int xform_mode;
 	int press_x, press_y;

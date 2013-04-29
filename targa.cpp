@@ -10,6 +10,8 @@
 
 using std::ifstream;
 
+namespace lab5 {
+
 TargaImage::TargaImage():
 m_width(0),
 m_height(0),
@@ -258,4 +260,6 @@ void TargaImage::flipImageVertically()
 
     //Copy the flipped image data to the original array
     m_imageData.assign(flippedData.begin(), flippedData.end());
+}
+
 }
