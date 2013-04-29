@@ -54,7 +54,6 @@ protected:
 
 	int xform_mode;
 	int press_x, press_y;
-	float x_angle,y_angle;
 	float scale_size;
 	int mirrorAngle, dogAngle;
 	float dogX, dogZ;

@@ -139,7 +139,7 @@ void GlGlut::drawScene() {
 	// Draw floor
 	glPushMatrix();
 	glRotated(-90.0, 1.0, 0.0, 0.0);
-	glScaled(100.0, 100.0, 100.0);  // Huge floor
+	glScaled(100.0, 100.0, 1.0);  // Huge floor
 	glTranslated(0.0, -0.5, 0.0);
 	glUseProgram(mirror_program);
 		glActiveTexture(GL_TEXTURE3);
@@ -194,7 +194,9 @@ void GlGlut::display() {
 	glRotated(-1*mirrorAngle, 0.0, 1.0, 0.0);
 	glTranslated(0.0, 0.0, 1.0);
 	// Draw mirrored objects here
+	glCullFace(GL_FRONT);
 	drawScene();
+	glCullFace(GL_BACK);
 	glPopMatrix();
 
 	// Back to main framebuffer
@@ -217,13 +219,9 @@ void GlGlut::display() {
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(0.,7.,10.,
-	          0.,0.5,-1.,
-	          0.,1.,0.);
-
-	glRotated(x_angle, 0.0, 1.0, 0.0);
-	glRotated(y_angle, 1.0, 0.0, 0.0);
-	glScaled(scale_size, scale_size, scale_size);
+	glTranslated(0., -0.5, 1.);
+	glTranslated(0., 0., -1*scale_size);
+	glRotated(15., 1., 0., 0.);
 
 	// Draw mirror
 	glPushMatrix();
@@ -268,11 +266,11 @@ void GlGlut::keyboard(unsigned char key, int mousex, int mousey) {
 			break;
 		case ',':
 			mirrorAngle -= 5;
-			if (mirrorAngle < -90) mirrorAngle = -90;
+			if (mirrorAngle < -85) mirrorAngle = -85;
 			break;
 		case '.':
 			mirrorAngle += 5;
-			if (mirrorAngle > 90) mirrorAngle = 90;
+			if (mirrorAngle > 85) mirrorAngle = 85;
 			break;
 		case 'j':
 			dogX -= 0.1;
@@ -303,29 +301,17 @@ void GlGlut::mouseClick(int button, int state, int x, int y) {
 	if (state == GLUT_DOWN) {
 		press_x = x;
 		press_y = y;
-		if (button == GLUT_LEFT_BUTTON)
-			xform_mode = XFORM_ROTATE;
-		else if (button == GLUT_RIGHT_BUTTON)
-			xform_mode = XFORM_SCALE;
+		xform_mode = XFORM_SCALE;
 	} else if (state == GLUT_UP)
 		xform_mode = XFORM_NONE;
 }
 
 void GlGlut::mouseMotion(int x, int y) {
-	if (xform_mode==XFORM_ROTATE) {
-		x_angle += (x - press_x)/5.0;
-		if (x_angle > 180) x_angle -= 360;
-		else if (x_angle <-180) x_angle += 360;
-		press_x = x;
-
-		y_angle += (y - press_y)/5.0;
-		if (y_angle > 180) y_angle -= 360;
-		else if (y_angle <-180) y_angle += 360;
-		press_y = y;
-    } else if (xform_mode == XFORM_SCALE) {
+	if (xform_mode == XFORM_SCALE) {
 		float old_size = scale_size;
 		scale_size *= (1+ (y - press_y)/60.0);
-		if (scale_size <0) scale_size = old_size;
+		if (scale_size < 1.) scale_size = old_size;
+		if (scale_size > 50.0) scale_size = old_size;
 		press_y = y;
     }
     glutPostRedisplay();
@@ -371,9 +357,7 @@ GlGlut::GlGlut() {
 	screen_width = DEF_SCREEN_W;
 	screen_height = DEF_SCREEN_H;
 	xform_mode = XFORM_NONE;
-	x_angle = 0.0f;
-	y_angle = 0.0f;
-	scale_size = 8.0f;
+	scale_size = 2.2f;
 	multisample = true;
 	mirrorAngle = -15;
 	dogAngle = -45;
@@ -425,8 +409,8 @@ void GlGlut::start(int *argc, char *argv[]) {
 	// Turn on depth testing
 	glEnable(GL_DEPTH_TEST);
 
-	// Turn on culling (prevents floor and env textures from working in mirror)
-	//glEnable(GL_CULL_FACE);
+	// Turn on culling
+	glEnable(GL_CULL_FACE);
 
 	// Meshes
 	printf("Loading dog mesh...\n");
