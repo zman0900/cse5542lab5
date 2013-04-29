@@ -48,6 +48,7 @@
 // Check the status of the GPU
 //******************************************************************************
 void Check_GPU_Status();
+bool hasFloatTextures();
 
 //******************************************************************************
 //  Read shaders from the disk into the main memory

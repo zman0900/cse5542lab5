@@ -92,6 +92,10 @@ public:
 	void Scale(float s);
 
 	void Centerize();
+
+	void Create_Sphere(float radius, int m, int n);
+
+	void Build_Normal();
 	
 	void Init();
 

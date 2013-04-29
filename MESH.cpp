@@ -53,15 +53,12 @@ void Cross(float x[], float y[], float r[])
 MESH::MESH()
 {
 	max_number	= 65536;
-	// vase
-	//max_verts = 8896;
-	//max_tris = 17784;
 	// doberman
-	//max_verts = 11313;
-	//max_tris = 18280;
+	max_verts = 11313;
+	max_tris = 18280;
 	// bunny
-	max_verts = 29416;
-	max_tris = 58828;
+	//max_verts = 29416;
+	//max_tris = 58828;
 	number		= 0;
 	t_number	= 0;
 	X			= new VERTEX	[max_verts];		
@@ -357,6 +354,86 @@ void MESH::Centerize()
 		X[i].p[1]-=center[1];
 		X[i].p[2]-=center[2];
 	}
+}
+
+void MESH::Create_Sphere(float radius, int m, int n)
+{
+	delete[] X;
+	delete[] T;
+	X = new VERTEX [m*n+m+n];
+	T = new GLuint [(m*n+m+n)*6];
+
+    number=0;
+    for(int i=0; i<=m; i++)
+        for(int j=0; j<=n; j++)
+        {
+            float theta=((i  )*2*3.14159)/m;
+            float phi  =((j  )  *3.14159)/n-3.14159/2;
+            X[number].p[0]=radius*cosf(phi)*cosf(theta);
+            X[number].p[1]=radius*cosf(phi)*sinf(theta);
+            X[number].p[2]=radius*sinf(phi);
+            X[number].p[3]=1;
+            number++;
+        }
+
+    t_number=m*n*2;
+    int p=0;
+    for(int i=0; i<m; i++)
+        for(int j=0; j<n; j++)
+        {
+            T[p++]=(i  )*(n+1)+j;
+            T[p++]=(i  )*(n+1)+j+1;
+            T[p++]=((i+1)%m)*(n+1)+j+1;
+            T[p++]=(i  )*(n+1)+j;
+            T[p++]=((i+1)%m)*(n+1)+j+1;
+            T[p++]=((i+1)%m)*(n+1)+j;
+        }
+
+    Build_Normal();
+}
+
+void MESH::Build_Normal()
+{
+	float* TN=new float[t_number*3];
+
+	memset(TN, 0, sizeof(float)*number*3);
+	for(int i=0; i<t_number; i++)
+	{
+		float *p0=X[T[i*3+0]].p;
+		float *p1=X[T[i*3+1]].p;
+		float *p2=X[T[i*3+2]].p;
+
+		float e0[3], e1[3];
+		for(int j=0; j<3; j++)
+		{
+			e0[j]=p1[j]-p0[j];
+			e1[j]=p2[j]-p0[j];
+		}
+		Cross(e1, e0, &TN[i*3]);
+		Normalize(&TN[i*3]);
+	}
+
+	for(int i=0; i<number; i++)
+		X[i].n[0]=X[i].n[1]=X[i].n[2]=0;
+
+	for(int i=0; i<t_number; i++)
+	{
+		int v0=T[i*3+0];
+		int v1=T[i*3+1];
+		int v2=T[i*3+2];
+		X[v0].n[0]+=TN[i*3+0];
+		X[v0].n[1]+=TN[i*3+1];
+		X[v0].n[2]+=TN[i*3+2];
+		X[v1].n[0]+=TN[i*3+0];
+		X[v1].n[1]+=TN[i*3+1];
+		X[v1].n[2]+=TN[i*3+2];
+		X[v2].n[0]+=TN[i*3+0];
+		X[v2].n[1]+=TN[i*3+1];
+		X[v2].n[2]+=TN[i*3+2];
+	}
+	for(int i=0; i<number; i++)	Normalize(X[i].n);
+
+	delete[] TN;
 }
 
 void MESH::Init()

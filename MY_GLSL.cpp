@@ -69,7 +69,13 @@ void Check_GPU_Status()
 	}
 
 	printf(" -----------------  checking graphics capability done. \n");
-} 
+}
+
+bool hasFloatTextures() {
+	string ext = reinterpret_cast<char const *>(glGetString(GL_EXTENSIONS));
+	if (ext.find("GL_ARB_texture_float") == string::npos) return false;
+	return true;
+}
 
 //******************************************************************************
 //  Read shaders from the disk into the main memory

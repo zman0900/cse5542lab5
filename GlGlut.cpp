@@ -18,6 +18,35 @@ void GlGlut::createCheckerboardTexture() {
     }
 }
 
+void GlGlut::loadEnvTexture() {
+	int width, height;
+	bool useFloat = hasFloatTextures();
+	float *dataf=0;
+	unsigned char *datai=0;
+	if (useFloat)
+		PXM_Read("stpeters_probe.pfm", &dataf, width, height);
+	else {
+		cout << "\tFloating point textures not supported! "
+		     << "Falling back to integer."
+		     << endl;
+		PXM_Read("stpeters_probe.pfm", &datai, width, height);
+	}
+	glGenTextures(1, &envTexId);
+	glBindTexture(GL_TEXTURE_2D, envTexId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	                GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+	                GL_LINEAR);
+	if (useFloat)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, width, height, 0, GL_RGBA,
+		         GL_FLOAT, dataf);
+	else
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB,
+		         GL_UNSIGNED_BYTE, datai);
+	delete[] dataf;
+	delete[] datai;
+}
+
 void GlGlut::loadTexture(const string& filename, GLuint *texId) {
 	TargaImage *tex = new TargaImage();
 	if (!tex->load(filename))
@@ -79,6 +108,13 @@ void GlGlut::loadShaders() {
 		floor->vtex = glGetAttribLocation(mirror_program, "vtex");
 		floor->tex = glGetUniformLocation(mirror_program, "tex");
 	glUseProgram(0);
+	cout << "Loading environment shader..." << endl;
+	env_program = Setup_GLSL("env");
+	glUseProgram(env_program);
+		env->vpos = glGetAttribLocation(env_program, "vertex_position");
+		env->vnorm = glGetAttribLocation(env_program, "vertex_normal");
+		env->tex_c = glGetUniformLocation(env_program, "env_texture");
+	glUseProgram(0);
 }
 
 void GlGlut::setViewport() {
@@ -92,10 +128,18 @@ void GlGlut::setViewport() {
 }
 
 void GlGlut::drawScene() {
+	// Draw environment
+	glUseProgram(env_program);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, envTexId);
+		glUniform1i(env->tex_c, 4);
+		env->Draw();
+	glUseProgram(0);
+
 	// Draw floor
 	glPushMatrix();
 	glRotated(-90.0, 1.0, 0.0, 0.0);
-	glScaled(3.0, 3.0, 3.0);
+	glScaled(100.0, 100.0, 100.0);  // Huge floor
 	glTranslated(0.0, -0.5, 0.0);
 	glUseProgram(mirror_program);
 		glActiveTexture(GL_TEXTURE3);
@@ -106,6 +150,9 @@ void GlGlut::drawScene() {
 	glPopMatrix();
 
 	// Draw dog using vertex array object
+	glPushMatrix();
+	glTranslated(dogX, 0.0, dogZ);
+	glRotated(dogAngle, 0.0, 1.0, 0.0);
 	glUseProgram(dog_program);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, dog_texCId);
@@ -115,27 +162,40 @@ void GlGlut::drawScene() {
 		glUniform1i(dog->tex_s, 1);
 		dog->Draw();
 	glUseProgram(0);
+	glPopMatrix();
 }
 
 //// Glut callbacks /////
 void GlGlut::display() {
+	// Switch to mirror FBO
+	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+
 	// adjust viewport and projection matrix to texture dimension
 	glViewport(0, 0, MIRROR_TEX_W, MIRROR_TEX_H);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, (double)(MIRROR_TEX_W)/MIRROR_TEX_H, 1.0, 100.0);
+	gluPerspective(90.0, (double)(MIRROR_TEX_W)/MIRROR_TEX_H, 0.1, 10000.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	// Switch to mirror FBO
-	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+	glTranslated(0., -0.5, 1.);
 
 	// Clear FBO
-	glClearColor(1., 0., 0., 1.);
+	glClearColor(1., 1., 1., 1.);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//glTranslated(0.0, -0.5, 0.0);
+	glPushMatrix();
+	// Transform to reflector's local coordinate system
+	glTranslated(0.0, 0.0, -1.0);
+	glRotated(mirrorAngle, 0.0, 1.0, 0.0);
+	// Reflect object across -z
+	glScaled(1.0, 1.0, -1.0);
+	// Transform back to world coordinates
+	glRotated(-1*mirrorAngle, 0.0, 1.0, 0.0);
+	glTranslated(0.0, 0.0, 1.0);
 	// Draw mirrored objects here
 	drawScene();
+	glPopMatrix();
 
 	// Back to main framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -153,11 +213,13 @@ void GlGlut::display() {
 	setViewport();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, 1., 1., 100.);
+	gluPerspective(60.0, 1., 0.1, 10000.);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(0.,3.,10.,0.,0.,-1.,0.,1.,0.);
+	gluLookAt(0.,7.,10.,
+	          0.,0.5,-1.,
+	          0.,1.,0.);
 
 	glRotated(x_angle, 0.0, 1.0, 0.0);
 	glRotated(y_angle, 1.0, 0.0, 0.0);
@@ -166,6 +228,7 @@ void GlGlut::display() {
 	// Draw mirror
 	glPushMatrix();
 	glTranslated(0.0, 0.0, -1.0);
+	glRotated(mirrorAngle, 0.0, 1.0, 0.0);
 	glUseProgram(mirror_program);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, mirrorTexId);
@@ -202,6 +265,32 @@ void GlGlut::keyboard(unsigned char key, int mousex, int mousey) {
 				cout << "Multisample on" << endl;
 			}
 			multisample = !multisample;
+			break;
+		case ',':
+			mirrorAngle -= 5;
+			if (mirrorAngle < -90) mirrorAngle = -90;
+			break;
+		case '.':
+			mirrorAngle += 5;
+			if (mirrorAngle > 90) mirrorAngle = 90;
+			break;
+		case 'j':
+			dogX -= 0.1;
+			break;
+		case 'l':
+			dogX += 0.1;
+			break;
+		case 'i':
+			dogZ -= 0.1;
+			break;
+		case 'k':
+			dogZ += 0.1;
+			break;
+		case 'u':
+			dogAngle = (dogAngle - 5) % 360;
+			break;
+		case 'o':
+			dogAngle = (dogAngle + 5) % 360;
 			break;
 		default:
 			//cout << "unused key: " << (int) key << endl;
@@ -286,6 +375,9 @@ GlGlut::GlGlut() {
 	y_angle = 0.0f;
 	scale_size = 8.0f;
 	multisample = true;
+	mirrorAngle = -15;
+	dogAngle = -45;
+	dogX = dogZ = 0.0;
 }
 
 GlGlut::~GlGlut() {
@@ -333,8 +425,8 @@ void GlGlut::start(int *argc, char *argv[]) {
 	// Turn on depth testing
 	glEnable(GL_DEPTH_TEST);
 
-	// Turn on culling
-	glEnable(GL_CULL_FACE);
+	// Turn on culling (prevents floor and env textures from working in mirror)
+	//glEnable(GL_CULL_FACE);
 
 	// Meshes
 	printf("Loading dog mesh...\n");
@@ -344,6 +436,8 @@ void GlGlut::start(int *argc, char *argv[]) {
 	cout << "\tVerts:" << dog->number << " Tri:" << dog->t_number << endl;
 	mirror = new TexturedPlane();
 	floor = new TexturedPlane();
+	env = new MESH();
+	env->Create_Sphere(50, 80, 80);
 
 	// Shaders
 	loadShaders();
@@ -354,8 +448,11 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glUniform1i(dog->tex_c, 0);
 	loadTexture("doberman_s.tga", &dog_texSId);
 	glUniform1i(dog->tex_s, 1);
+	printf("Loading environment texture...\n");
+	loadEnvTexture();
 
 	// Texture for floor
+	printf("Generating floor texture...\n");
 	createCheckerboardTexture();
 	glGenTextures(1, &checkTexId);
 	glBindTexture(GL_TEXTURE_2D, checkTexId);
@@ -380,6 +477,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, MIRROR_TEX_W, MIRROR_TEX_H, 0,
 	             GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUniform1i(mirror->tex, 2);
 
@@ -409,6 +507,7 @@ void GlGlut::start(int *argc, char *argv[]) {
 	dog->Init();
 	mirror->initVBO();
 	floor->initVBO();
+	env->Init();
 
 	// Start
 	reshape(screen_width, screen_height);
