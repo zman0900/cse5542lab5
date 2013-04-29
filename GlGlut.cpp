@@ -119,13 +119,7 @@ void GlGlut::loadShaders() {
 }
 
 void GlGlut::setViewport() {
-	if (screen_width > screen_height) {
-		glViewport((screen_width-screen_height)/2, 0, screen_height,
-		           screen_height);
-	} else {
-		glViewport(0, (screen_height-screen_width)/2, screen_width,
-		           screen_width);
-	}
+	glViewport(0, 0, screen_width, screen_height);
 }
 
 void GlGlut::drawScene() {
@@ -216,7 +210,7 @@ void GlGlut::display() {
 	setViewport();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, 1., 0.1, 10000.);
+	gluPerspective(60.0, (double)(screen_width)/screen_height, 0.1, 10000.);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
