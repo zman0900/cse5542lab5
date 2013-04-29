@@ -59,6 +59,8 @@ void Check_GPU_Status()
 	     ext.find("GL_ARB_shader_objects") == string::npos ||
 	     ext.find("GL_ARB_shading_language_100") == string::npos ||
 	     ext.find("GL_ARB_vertex_program") == string::npos ||
+	     ext.find("GL_ARB_vertex_array_object") == string::npos ||
+	     ext.find("GL_ARB_framebuffer_object") == string::npos ||
 	     ext.find("GL_ARB_fragment_program") == string::npos) {
 		fprintf(stderr, "Driver does not support necessary extensions\n");
 		exit(1);
