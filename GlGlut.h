@@ -19,12 +19,14 @@
 #include "MY_GLSL.h"
 #include "MESH.h"
 #include "targa.h"
-#include "mirror.h"
+#include "texturedplane.h"
 
 #define DEF_SCREEN_W 800
 #define DEF_SCREEN_H 800
 #define MIRROR_TEX_W 1024
 #define MIRROR_TEX_H 1024
+#define CHECK_WIDTH 128	// Dimensions of checkerboard texture
+#define CHECK_HEIGHT 128
 #define WINDOW_TITLE "CSE 5542 Lab 5 - Dan Ziemba"
 #define XFORM_NONE 0
 #define XFORM_ROTATE 1
@@ -45,8 +47,9 @@ protected:
 	GLuint dog_program, mirror_program;
 
 	GLuint fboId, rboId;
-	GLuint mirrorTexId;
-	Mirror *mirror;
+	GLuint mirrorTexId, checkTexId;
+	TexturedPlane *mirror, *floor;
+	GLubyte checkerTexture[CHECK_HEIGHT][CHECK_WIDTH][3];
 
 	int xform_mode;
 	int press_x, press_y;
@@ -70,9 +73,11 @@ protected:
 	static void reshapeWrapper(int w, int h);
 
 	// Others
+	void createCheckerboardTexture();
 	void loadTexture(const string& filename, GLuint *texId);
 	void loadShaders();
 	void setViewport();
+	void drawScene();
 public:
 	GlGlut();
 	~GlGlut();

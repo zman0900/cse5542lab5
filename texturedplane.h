@@ -1,5 +1,5 @@
-#ifndef __MIRROR_H__
-#define __MIRROR_H__
+#ifndef __TEXTUREDPLANE_H__
+#define __TEXTUREDPLANE_H__
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -12,7 +12,7 @@
 
 namespace lab5 {
 
-class Mirror {
+class TexturedPlane {
 	private:
 		typedef struct {
 			float p[4];     //Vertex Position
@@ -20,15 +20,15 @@ class Mirror {
 			float uv[2];    //Vertex Texture Coordinate
 		} VERTEX;
 
-		VERTEX *mirrorVerts;
-		GLuint *mirrorInds;
+		VERTEX *verts;
+		GLuint *inds;
 		GLuint vertex_handle;
 		GLuint triangle_handle;
 		static const int number = 4;    // Number of vertices
 		static const int t_number = 2;  // Number of triangles
 		GLuint vao;
 	public:
-		Mirror();
+		TexturedPlane();
 		void initVBO();
 		void draw();
 

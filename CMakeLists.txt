@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project (cse5542lab5)
-add_executable (lab5 lab5.cpp targa.cpp GlGlut.cpp MESH.cpp MY_GLSL.cpp mirror.cpp)
+add_executable (lab5 lab5.cpp targa.cpp GlGlut.cpp MESH.cpp MY_GLSL.cpp texturedplane.cpp)
 if (WIN32)
 	target_link_libraries (lab5 glut GL GLU GLEW)
 else()

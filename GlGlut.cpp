@@ -6,6 +6,18 @@ namespace lab5 {
 
 GlGlut *GlGlut::instance = NULL;
 
+void GlGlut::createCheckerboardTexture() {
+  for (int irow = 0; irow < CHECK_HEIGHT; irow++)
+    for (int jcol = 0; jcol < CHECK_WIDTH; jcol++) {
+      int bit = (irow & 4) ^ (jcol & 4);
+      GLubyte c = 0;
+      if (bit) { c = 255; };
+      checkerTexture[irow][jcol][0] = c;
+      checkerTexture[irow][jcol][1] = c;
+      checkerTexture[irow][jcol][2] = c;
+    }
+}
+
 void GlGlut::loadTexture(const string& filename, GLuint *texId) {
 	TargaImage *tex = new TargaImage();
 	if (!tex->load(filename))
@@ -55,13 +67,17 @@ void GlGlut::loadShaders() {
 		dog->tex_c = glGetUniformLocation(dog_program, "tex_c");
 		dog->tex_s = glGetUniformLocation(dog_program, "tex_s");
 	glUseProgram(0);
-	cout << "Loading mirror shader..." << endl;
-	mirror_program = Setup_GLSL("mirror");
+	cout << "Loading texturedplane shader..." << endl;
+	mirror_program = Setup_GLSL("texturedplane");
 	glUseProgram(mirror_program);
 		mirror->vpos = glGetAttribLocation(mirror_program, "vpos");
 		mirror->vnorm = glGetAttribLocation(mirror_program, "vnorm");
 		mirror->vtex = glGetAttribLocation(mirror_program, "vtex");
 		mirror->tex = glGetUniformLocation(mirror_program, "tex");
+		floor->vpos = glGetAttribLocation(mirror_program, "vpos");
+		floor->vnorm = glGetAttribLocation(mirror_program, "vnorm");
+		floor->vtex = glGetAttribLocation(mirror_program, "vtex");
+		floor->tex = glGetUniformLocation(mirror_program, "tex");
 	glUseProgram(0);
 }
 
@@ -75,57 +91,19 @@ void GlGlut::setViewport() {
 	}
 }
 
-//// Glut callbacks /////
-void GlGlut::display() {
-	// adjust viewport and projection matrix to texture dimension
-	glViewport(0, 0, MIRROR_TEX_W, MIRROR_TEX_H);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0f, (float)(MIRROR_TEX_W)/MIRROR_TEX_H, 1.0f, 100.0f);
-	glMatrixMode(GL_MODELVIEW);
-
-	// Switch to mirror FBO
-	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-
-	// Clear FBO
-	glClearColor(1, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// Draw mirrored objects here
-
-	// Back to main framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// Bind mirror texture and generate mipmaps
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, mirrorTexId);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	// Clear main framebuffer
-	glClearColor(1, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-	// Back to normal viewport
-	setViewport();
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60, 1, .1, 100);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0,0,5,0,0,0,0,1,0);
-
-	glRotated(x_angle, 0.0, 1.0, 0.0);
-	glRotated(y_angle, 1.0, 0.0, 0.0);
-	glScaled(scale_size, scale_size, scale_size);
-
-	// Draw mirror
+void GlGlut::drawScene() {
+	// Draw floor
+	glPushMatrix();
+	glRotated(-90.0, 1.0, 0.0, 0.0);
+	glScaled(3.0, 3.0, 3.0);
+	glTranslated(0.0, -0.5, 0.0);
 	glUseProgram(mirror_program);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, mirrorTexId);
-		glUniform1i(mirror->tex, 2);
-		mirror->draw();
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, checkTexId);
+		glUniform1i(floor->tex, 3);
+		floor->draw();
 	glUseProgram(0);
+	glPopMatrix();
 
 	// Draw dog using vertex array object
 	glUseProgram(dog_program);
@@ -137,6 +115,66 @@ void GlGlut::display() {
 		glUniform1i(dog->tex_s, 1);
 		dog->Draw();
 	glUseProgram(0);
+}
+
+//// Glut callbacks /////
+void GlGlut::display() {
+	// adjust viewport and projection matrix to texture dimension
+	glViewport(0, 0, MIRROR_TEX_W, MIRROR_TEX_H);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0, (double)(MIRROR_TEX_W)/MIRROR_TEX_H, 1.0, 100.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// Switch to mirror FBO
+	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+
+	// Clear FBO
+	glClearColor(1., 0., 0., 1.);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Draw mirrored objects here
+	drawScene();
+
+	// Back to main framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Bind mirror texture and generate mipmaps
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, mirrorTexId);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	// Clear main framebuffer
+	glClearColor(1., 1., 1., 1.);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+	// Back to normal viewport
+	setViewport();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60.0, 1., 1., 100.);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(0.,3.,10.,0.,0.,-1.,0.,1.,0.);
+
+	glRotated(x_angle, 0.0, 1.0, 0.0);
+	glRotated(y_angle, 1.0, 0.0, 0.0);
+	glScaled(scale_size, scale_size, scale_size);
+
+	// Draw mirror
+	glPushMatrix();
+	glTranslated(0.0, 0.0, -1.0);
+	glUseProgram(mirror_program);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, mirrorTexId);
+		glUniform1i(mirror->tex, 2);
+		mirror->draw();
+	glUseProgram(0);
+	glPopMatrix();
+
+	drawScene();
 
 	glutSwapBuffers();
 }
@@ -247,6 +285,7 @@ GlGlut::GlGlut() {
 	x_angle = 0.0f;
 	y_angle = 0.0f;
 	scale_size = 8.0f;
+	multisample = true;
 }
 
 GlGlut::~GlGlut() {
@@ -285,7 +324,6 @@ void GlGlut::start(int *argc, char *argv[]) {
 	Check_GPU_Status();
 
 	// Print multisample info
-	multisample = true;
 	GLint buf, sbuf;
 	glGetIntegerv(GL_SAMPLE_BUFFERS, &buf);
 	printf("number of sample buffers is %d\n", buf);
@@ -301,14 +339,11 @@ void GlGlut::start(int *argc, char *argv[]) {
 	// Meshes
 	printf("Loading dog mesh...\n");
 	dog = new MESH();
-	//dog->Read_OBJ_File_Advanced("vase_02.obj");
 	dog->Read_OBJ_File_Advanced("doberman.obj");
-	//dog->Read_OBJ_File("bunny.obj");
 	dog->Scale(.25);
-	dog->Centerize();
 	cout << "\tVerts:" << dog->number << " Tri:" << dog->t_number << endl;
-	mirror = new Mirror();
-	
+	mirror = new TexturedPlane();
+	floor = new TexturedPlane();
 
 	// Shaders
 	loadShaders();
@@ -319,6 +354,21 @@ void GlGlut::start(int *argc, char *argv[]) {
 	glUniform1i(dog->tex_c, 0);
 	loadTexture("doberman_s.tga", &dog_texSId);
 	glUniform1i(dog->tex_s, 1);
+
+	// Texture for floor
+	createCheckerboardTexture();
+	glGenTextures(1, &checkTexId);
+	glBindTexture(GL_TEXTURE_2D, checkTexId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	                GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, CHECK_WIDTH, CHECK_HEIGHT, 0,
+	             GL_RGB, GL_UNSIGNED_BYTE, checkerTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUniform1i(floor->tex, 3);
 
 	// Texture for mirror
 	glGenTextures(1, &mirrorTexId);
@@ -358,10 +408,11 @@ void GlGlut::start(int *argc, char *argv[]) {
 	// Initialize VBOs and VAO
 	dog->Init();
 	mirror->initVBO();
+	floor->initVBO();
 
 	// Start
 	reshape(screen_width, screen_height);
-	glutIdleFunc(idleWrapper);
+	//glutIdleFunc(idleWrapper);
 	glutMainLoop();
 }
 
